@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site site="http://www.usanetwork.com"
+	    plugin="http://www.usanetwork.com/outlet/rewind_as3.swf"
+			initialState="playing"
+			version="1.0">
+	
+	
+	<crop x="25" y="15" width="670" height="380" />
+	
+	<seekbar type="simple">
+		<start x="0" y="380" />
+		<end   x="600" y="380" />
+		<played>
+				<color rgb="667f99" />
+		</played>
+	</seekbar>
+	
+	<!-- PLAYING -->
+	<state name="playing">
+		<event>
+			<condition>
+				<command name="pause" />
+			</condition>
+			<action>
+				<click x="36" y="393" />
+				<goto state="paused" />
+			</action>
+		</event>
+		
+		<!-- Video ends -->
+		<event>
+			<condition>
+				<url matches="http://www.nbc.com/video/library/" />
+			</condition>
+			<action>
+				<goto state="end" />
+			</action>
+		</event>
+	</state>
+	
+	<!-- PAUSED -->
+	<state name="paused">
+		<event>
+			<condition>
+				<command name="play" />
+			</condition>
+			<action>
+				<click x="36" y="393" />
+				<goto state="playing" />
+			</action>
+		</event>
+	</state>
+</site>

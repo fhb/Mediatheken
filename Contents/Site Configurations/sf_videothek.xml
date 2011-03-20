@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site site="http://www.videoportal.sf.tv/video.*"
+	    plugin="http://.*videoportal.sf.tv/flash/videoplayer.swf"
+			initialState="playing"
+			version="1.0">
+	
+	<crop x="0" y="0" width="640" height="360" />  	
+	  <seekbar type="thumb">
+                <start x="70" y="373" />
+                <end   x="333" y="373" />
+                <played>
+                             <color rgb="888888" />
+                </played>
+        </seekbar>
+	
+	<!-- PLAYING -->
+	<state name="playing">
+		<event>
+			<condition>
+				<command name="pause" />
+			</condition>
+			<action>
+				<click x="36" y="370" />
+				<goto state="paused" />
+			</action>
+		</event>
+		
+	</state>
+	
+	<!-- PAUSED -->
+	<state name="paused">
+		<event>
+			<condition>
+				<command name="play" />
+			</condition>
+			<action>
+				<click x="36" y="370" />
+				<goto state="playing" />
+			</action>
+		</event>
+	</state>
+</site>
