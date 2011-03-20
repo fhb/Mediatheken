@@ -132,7 +132,7 @@ def AlleSendungen(sender, kanal, minlength):
 				if clip.find("vod")>-1:
 					url=clip[0:clip.find("vod")+3].strip('"')
 					if clip.find(".mp4")>-1:
-						clip="mp4:"+clip[clip.find("vod")+4:-5]
+						clip="mp4:"+clip[clip.find("vod")+4:-4]
 					elif clip.find(".flv")>-1:
 						clip=clip[clip.find("vod")+4:-5]
 				if clip.find("ard/tv")>-1:
