@@ -8,11 +8,6 @@ from PMS import *
 NAME = "Mediatheken"
 PLUGIN_PREFIX     = "/video/mediatheken"
 
-USA__URL                     = "http://www.usanetwork.com"
-USA_FULL_EPISODES_SHOW_LIST = "http://video.usanetwork.com/"         
-RTLNOW__URL                     = "http://rtl-now.rtl.de/"
-ALL_LIST_URL = "http://rtl-now.rtl.de/sendung_a_z.php"
-USA_EP_URL                  = "http://www.usanetwork.com/series/"
 THUMB	                = "icon-default2.png"
 ART                     = "art-default.png"
 
@@ -29,15 +24,6 @@ def Start():
   MediaContainer.art        =R(ART)
   MediaContainer.title1 = NAME
   DirectoryItem.thumb       =R(THUMB)
-
-####################################################################################################
-#def MainMenu():
-# 
-
- #   dir.Append(Function(DirectoryItem(all_shows, "All Shows"), pageUrl = USA_FULL_EPISODES_SHOW_LIST))
-  #  return dir
-    
-####################################################################################################
 
 
 ####################################################################################################
@@ -134,10 +120,10 @@ def AlleSendungen(sender, kanal, minlength):
 					if clip.find(".mp4")>-1:
 						clip="mp4:"+clip[clip.find("vod")+4:-4]
 					elif clip.find(".flv")>-1:
-						clip=clip[clip.find("vod")+4:-5]
+						clip=clip[clip.find("vod")+4:-4]
 				if clip.find("ard/tv")>-1:
-					url=clip[1:clip.find("ard/tv")-1]
-					clip=clip[clip.find("ard/tv"):-1]
+					url=clip[1:clip.find("ard/tv")-1].strip('"')
+					clip=clip[clip.find("ard/tv"):-1].strip('"')
 				
 			
 				
@@ -213,128 +199,3 @@ def Extracts(sender, dir):
 	return dir
 
 ####################################################################################################
-
-def All(sender):
-    pageUrl= ALL_LIST_URL
-    dir = MediaContainer(mediaType='items')
-    content = XML.ElementFromURL(pageUrl, True)
-   	
-    titles = content.xpath('//div[@class="contentleft_bottom"]/div/div/div[@class="m03text"]/h2')
-    thumbs = content.xpath('//div[@class="contentleft_bottom"]/div/div/div[@class="m03img"]/a/img/attribute::src')
-    titleUrls = content.xpath('//div[@class="contentleft_bottom"]/div/div/div[@class="m03link"]/a/attribute::href')
-    summaries = content.xpath('//div[@class="contentleft_bottom"]/div/div/div[@class="m03text"]/text()[last()]') 
-    Log(summaries)
-    #Log(titleUrl.text)
-    for i in range(len(titles)):
-   		titleUrl = "http://rtl-now.rtl.de/"+titleUrls[i]
-   		title = titles[i].text
-   		summary = summaries[i]
-   		thumb = thumbs[i]
-   		
-   		dir.Append(Function(DirectoryItem(ItemPage, title, thumb=thumb, summary=summary),pageUrl = titleUrl))
-   		Log(thumb)
-   		Log(summary)
-   		Log(titleUrl)
-   		Log(title)
-  #  for item in thumb:
-    #  Log(thumb)
-   #   thumb=item.xpath("img")[0].get('src')
-    #for item in summary:
-  #    Log(summary)
-   #   summary=item.split('</h2>')[1]
-  
-    
-    return dir 
-    
-####################################################################################################
-def getVideo(sender, pageUrl):
-	return Redirect('http://http://podfiles.zdf.de/podcast/zdf_podcasts/110314_h19_p.mp4')
-
-def ItemPage(sender, pageUrl):
-#def ItemPage(sender):
-    Log("Success!")
-    pageUrl= pageUrl
-    dir = MediaContainer(mediaType='items')
-    content = XML.ElementFromURL(pageUrl, True)
-   
-    titles = content.xpath('//div[@class="title"]/a/text() | //div[@class="title titlelong"]/a/text()')
-    freeornots = content.xpath('//div[@class="buy"]/a/text()')
-    
-    #thumb = content.xpath('//div[@class="contentleft_bottom"]/div/div/div[@class="m03img"]')
-    #titleUrl = content.xpath('//div[@class="contentleft_bottom"]/div/div/div[@class="m03link"]/a')
-    #summary = content.xpath('//div[@class="contentleft_bottom"]/div/div/div[@class="m03text"]') 
-    #Log(title)
-    #Log(titleUrl.text)
-    Log(titles) 
-    atleastoneentry=0
-    dir.Append(VideoItem("http://podfiles.zdf.de/podcast/zdf_podcasts/110314_h19_p.mp4", "test"))
-    for i in range(len(titles)):
-      title=titles[i]
-      if freeornots[i] == "kostenlos":
-      	freeornot=1
-      	atleastoneentry = 1
-      elif freeornots[i] != "kostenlos":
-      	freeornot=0
-      test="test"
-      Log(title)
-      Log(freeornot)
-      if freeornot == 1:
-      	dir.Append(Function(DirectoryItem(ItemPage, title), test))
-    if atleastoneentry == 0:
-		dir.Append(Function(DirectoryItem(ItemPage, "nur kostenpflichtige Sendungen"), test))
-   #for item in titleUrl:
-    #  titleUrl = item.text
-   #   Log(titleUrl)
-  #  for item in thumb:
-    #  Log(thumb)
-   #   thumb=item.xpath("img")[0].get('src')
-    #for item in summary:
-  #    Log(summary)
-   #   summary=item.split('</h2>')[1]
-   #pageUrl = titleUrl
-    	
-    return dir 
-#################################################################################################### 
-
-  
-####################################################################################################
-def all_shows(sender, pageUrl):
-    dir = MediaContainer(title2=sender.itemTitle)
-    content = XML.ElementFromURL(pageUrl, True)
-    for item in content.xpath('//div[@id="find_it_branch_Full_Episodes"]//ul/li'):
-      titleUrl = item.xpath("a")[0].get('href')
-      Log(titleUrl)
-      page = HTTP.Request(titleUrl)
-      titleUrl2=re.compile('var _rssURL = "(.+?)";').findall(page)[0].replace('%26','&')
-      Log(titleUrl2)
-      Log(re.compile('var _rssURL = "(.+?)";').findall(page))
-      Log(titleUrl2)
-      image =""
-      title = item.xpath("a")[0].text
-      titleUrl2=titleUrl2 + "&networkid=103"
-      Log(titleUrl2)
-      dir.Append(Function(DirectoryItem(VideoPage, title), pageUrl = titleUrl2, dummyUrl=titleUrl))
-    return dir 
-
-####################################################################################################
-def VideoPage(sender, pageUrl, dummyUrl):
-    dir = MediaContainer(title2=sender.itemTitle)
-    content = XML.ElementFromURL(pageUrl).xpath("//item")
-    Log(content)
-    for item in content:
-      try:
-        vidUrl = item.xpath('./media:content/media:player',namespaces= NAMESPACE)[0].get('url')
-        Log(vidUrl)
-        vidUrl=vidUrl.replace("&dst=rss||","")
-        vidUrl=vidUrl.replace("http://video.nbcuni.com/player/?id=",dummyUrl + "index.html?id=")
-        title = item.xpath("title")[0].text
-        Log(title)
-        #subtitle = Datetime.ParseDate(item.xpath('pubDate')[0].text).strftime('%a %b %d, %Y')
-        #summary = item.xpath('description')[0].text.strip()
-        #summary = summary[summary.find('>')+1:].strip()
-        thumb = item.xpath('./media:content/media:thumbnail', namespaces=NAMESPACE)[0].get('url')
-        Log(thumb)
-        dir.Append(WebVideoItem(vidUrl, title=title, thumb=thumb))
-      except:
-        pass
-    return dir
