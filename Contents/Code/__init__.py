@@ -226,9 +226,12 @@ def formatTitle(series,title,kanal):
 	kanal=kanal
 	var1=False
 	if (kanal == "Aktuell") or (kanal == "Talkshow") or (kanal == "Dokumentation") or (kanal == "Comedy")  or (kanal == "Kinder")  or (kanal == "Krimi")  or (kanal == "Magazin")  or (kanal == "Nachrichten")  or (kanal == "Serie")  or (kanal == "Show")  or (kanal == "Film")  or (kanal == "Wissen"):	
+			if series !="" and title.find("Sendung vom") !=-1:
+				Log("++++Titelveränderung 3 (Sendung vom)++++")
+				title=title[title.find("Sendung vom")+12:]
+				var1=True
 			m1=re.findall('vom [0-9]{1,2}\.[0-9]{1,2}\.[0-9]{2,4}',title)
 			m2=re.findall('vom [0-9]{1,2}.*[0-9]{2,4}',title)
-			
 			if m2!=[] or m1 != []:
 				Log("++++Titelveränderung 1 (vom bei heuteshow)++++")				
 				series=title[0:title.find("vom")]
@@ -239,10 +242,6 @@ def formatTitle(series,title,kanal):
 				Log("++++Titelveränderung 2 (strip() bei Lena..)++++")
 				title=title[0:title.find("(")-1].strip('"')+" "+title[title.find("("):]
 				#title=title.replace('"','')
-				var1=True
-			if series !="" and title.find("Sendung vom") !=-1:
-				Log("++++Titelveränderung 3 (Sendung vom)++++")
-				title=title[title.find("Sendung vom")+12:]
 				var1=True
 			if series.find("Reportage / Dokumentation") !=-1:
 				Log("++++Titelveränderung 4 (Reportage/Dokumentation)++++")
