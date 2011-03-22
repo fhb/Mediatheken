@@ -224,9 +224,10 @@ def formatTitle(series,title,kanal):
 	series=series
 	title=title
 	kanal=kanal
+	var1=False
 	if (kanal == "Talkshow") or (kanal == "Dokumentation") or (kanal == "Comedy")  or (kanal == "Kinder")  or (kanal == "Krimi")  or (kanal == "Magazin")  or (kanal == "Nachrichten")  or (kanal == "Serie")  or (kanal == "Show")  or (kanal == "Spielfilm")  or (kanal == "Wissen"):	
 			m=re.findall('vom [0-9]{1,2}\.[0-9]{1,2}\.[0-9]{2,4}',title)
-			var1=False
+			
 			if m != []:
 				Log("++++Titelveränderung 1 (vom bei heuteshow)++++")				
 				series=title[0:title.find("vom")]
