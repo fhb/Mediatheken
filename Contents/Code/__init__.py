@@ -225,7 +225,7 @@ def formatTitle(series,title,kanal):
 	title=title
 	kanal=kanal
 	var1=False
-	if (kanal == "Talkshow") or (kanal == "Dokumentation") or (kanal == "Comedy")  or (kanal == "Kinder")  or (kanal == "Krimi")  or (kanal == "Magazin")  or (kanal == "Nachrichten")  or (kanal == "Serie")  or (kanal == "Show")  or (kanal == "Spielfilm")  or (kanal == "Wissen"):	
+	if (kanal == "Aktuell") or (kanal == "Talkshow") or (kanal == "Dokumentation") or (kanal == "Comedy")  or (kanal == "Kinder")  or (kanal == "Krimi")  or (kanal == "Magazin")  or (kanal == "Nachrichten")  or (kanal == "Serie")  or (kanal == "Show")  or (kanal == "Spielfilm")  or (kanal == "Wissen"):	
 			m=re.findall('vom [0-9]{1,2}\.[0-9]{1,2}\.[0-9]{2,4}',title)
 			
 			if m != []:
@@ -250,12 +250,12 @@ def formatTitle(series,title,kanal):
 			if title.find(series) == -1:
 				title=series+" - "+title
 				Log("++++Serie und Titel zusammengefügt++++")
-			elif title.find(":")!=-1:
+			elif title.find(": ")!=-1:
 				Log("++++Titelveränderung 5(replace(:, -) + strip()++++")
 				Log(series)
 				Log(title)
 				Log(title.find(series))
-				title=title.replace(":"," -")
+				title=title.replace(": "," - ")
 				title=title[0:title.find(" - ")]+" - "+title[title.find(" - ")+3:].strip('"')
 				var1=True
 	if var1 ==False:	
