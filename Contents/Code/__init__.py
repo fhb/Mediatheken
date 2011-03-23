@@ -115,10 +115,22 @@ def AlleSendungen(sender, kanal, minlength):
 		elif downloadParam.find("www.videoportal.sf.tv") != -1:
 				url=content['items'][i]['url']
 				webvideo=True
+		elif downloadParam.find("videos.arte.tv") != -1:
+				url=content['items'][i]['url']
+				webvideo=True
 		else:
 			#Betrifft alle Videos ohne Trennung von clip und url:
 			if downloadParam.find("--playpath") ==-1:
 				clip=downloadParam[downloadParam.find("-r")+3:downloadParam.find("--")-1].strip('"')
+				if clip.find("MP4:")>-1:
+					clip=clip.strip('"')
+					url=clip[0:clip.find("MP4:")]
+					clip=clip[clip.find("MP4:"):]
+				if clip.find("mp4:")>-1:
+					clip=clip.strip('"')
+					url=clip[0:clip.find("mp4:")]
+					clip=clip[clip.find("mp4:"):]
+				
 				if clip.find("swr.fcod")>-1:
 					url=clip
 					clip=clip.partition("/")[2].partition("/")[2].partition("/")[2].partition("/")[2].partition("/")[2]
@@ -145,7 +157,7 @@ def AlleSendungen(sender, kanal, minlength):
 				url=downloadParam[downloadParam.find("--tcUrl")+8:downloadParam.find("--app")-1]
 			
 			##Polizeiruf-Fix (?sen.....)		
-			if clip.find("?")>-1:
+			if clip.find("?")>-1 and url.find("arte")==-1:
 				clip=clip[0:clip.find("?")]
 			clip=clip.encode('utf-8')
 			clip=String.Quote(clip, usePlus=True)
