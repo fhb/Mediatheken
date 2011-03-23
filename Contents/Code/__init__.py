@@ -15,9 +15,9 @@ from PMS import *
 NAME = "Mediatheken"
 PLUGIN_PREFIX     = "/video/mediatheken"
 
-THUMB	                = "icon-default2.png"
-ART                     = "art-default.png"
-ART_EMPTY				= "art-empty.png"
+THUMB	                = "icon_default.png"
+ART                     = "art_default.png"
+ART_EMPTY				= "art_empty.png"
 
 CACHE_INTERVAL              = 3600
 DEBUG                       = True
