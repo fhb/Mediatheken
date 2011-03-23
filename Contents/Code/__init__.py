@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+
+#(c) Felix Bäcker
+
+#Dieses Plugin gewährt euch Zugang zu allen wichtigen deutschen Mediatheken der Öffentlich-Rechtlichen Sender.
+#Es basiert auf der freundlicherweise von appdrive.net zur Verfügung gestellten API.
+
+
 import re, random
 from PMS import *
 
@@ -107,10 +114,12 @@ def AlleSendungen(sender, kanal, minlength):
 		quicktime=False
 		
 		#Betrifft vor allem ZDF-Beiträge:
-		if ("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'] !=""):
-			url=content['items'][i]['quicktime']
-			quicktime=True
-			
+		Log("Quicktime Stream disabled")
+		if False!=False:
+		#if ("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'] !=""):
+			#url=content['items'][i]['quicktime']
+			#quicktime=True
+			Log("Quicktime Stream disabled")
 		#Betrifft das Schweizer Fernsehen:
 		elif downloadParam.find("www.videoportal.sf.tv") != -1:
 				url=content['items'][i]['url']
