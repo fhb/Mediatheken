@@ -1,0 +1,9 @@
+[
+  {
+    "id":"zdfformat",
+    "type":"enum",
+    "label":"ZDF Format",
+    "values":["Flash", "Quicktime"],
+    "default":"Quicktime"
+  }
+]

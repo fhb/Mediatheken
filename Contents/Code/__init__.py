@@ -7,7 +7,6 @@
 
 
 import re, random
-from PMS import *
 
 
 
@@ -15,9 +14,11 @@ from PMS import *
 NAME = "Mediatheken"
 PLUGIN_PREFIX     = "/video/mediatheken"
 
-THUMB	                = "icon_default.png"
-ART                     = "art_default.png"
-ART_EMPTY				= "art_empty.png"
+THUMB	                = "icon-default.png"
+THUMB_PREFS				= "icon-prefs.png"
+ART                     = "art-default.jpg"
+ART_EMPTY				= "art-empty.jpg"
+
 
 CACHE_INTERVAL              = 3600
 DEBUG                       = True
@@ -27,7 +28,7 @@ DEBUG                       = True
 def Start():
   Plugin.AddPrefixHandler(PLUGIN_PREFIX, MainMenu, "Mediatheken",THUMB, ART)
   Plugin.AddViewGroup("InfoList", viewMode="InfoList", mediaType="items")
-  #HTTP.CacheTime = 3600
+  HTTP.CacheTime = 3600
   MediaContainer.art        =R(ART_EMPTY)
   MediaContainer.title1 	=NAME
   DirectoryItem.thumb       =R(THUMB)
@@ -43,6 +44,9 @@ def MainMenu():
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"ARD Mittagsmagazin", thumb=None), kanal="ARD Mittagsmagazin", minlength=20))
 	dir.Append(Function(DirectoryItem(AlleSendungen,"Hart aber fair", thumb=None), kanal="Hart aber fair", minlength=20))
 	dir.Append(Function(DirectoryItem(Kategorien,"Sendungen nach Kategorien", thumb=None)))
+	
+   	dir.Append(PrefsItem(title="Einstellungen",subtile="",summary="",thumb=R(THUMB_PREFS)))
+
 	
 	return dir
 	return MessageContainer("No items available", "There are no items available.")
@@ -65,6 +69,7 @@ def Kategorien(sender):
 ####################################################################################################
 
 def AlleSendungen(sender, kanal, minlength):
+
 	dir = MediaContainer(mediaType='items')
 	dir.title2=kanal
 	extractdir = MediaContainer(mediaType='items')
@@ -114,12 +119,13 @@ def AlleSendungen(sender, kanal, minlength):
 		quicktime=False
 		
 		#Betrifft vor allem ZDF-Beiträge:
-		Log("Quicktime Stream disabled")
-		if False!=False:
-		#if ("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'] !=""):
-			#url=content['items'][i]['quicktime']
-			#quicktime=True
-			Log("Quicktime Stream disabled")
+		#Log("Quicktime Stream" + str())
+		#Log(Prefs['zdfformat'])
+
+		#Prefs["quicktime"] == 1 and 
+		if Prefs['zdfformat']=="Quicktime" and ("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'] !=""):
+			url=content['items'][i]['quicktime']
+			quicktime=True
 		#Betrifft das Schweizer Fernsehen:
 		elif downloadParam.find("www.videoportal.sf.tv") != -1:
 				url=content['items'][i]['url']
@@ -222,15 +228,17 @@ def AlleSendungen(sender, kanal, minlength):
 	Log("######################  Ingesamt "+str(countextract)+" Ausschnitte  ######################")
 	#Falls es einen Ausschnitt gibt:
 	if extractexists==True:
-		dir.Append(Function(DirectoryItem(Extracts, "Ausschnitte", duration=None, summary="Alle Videos, die kürzer als "+str(minlength)+" Minuten sind."), dir=extractdir))
-	
+		dir.Append(Function(DirectoryItem(Extracts, "Ausschnitte", duration=None, summary="Alle Videos, die kürzer als "+str(minlength)+" Minuten sind.")))
+		#aus irgendeinem Grund geht die übergabe durch die funktion nicht mehr
+		Dict['foo'] = extractdir
+
 	#dir=dir.Sort("datum")
 	return dir
 
 ####################################################################################################
-def Extracts(sender, dir):
-	
-	dir=dir
+def Extracts(sender):
+	dir=Dict['foo']
+	#dirs=dir
 	return dir
 
 ####################################################################################################

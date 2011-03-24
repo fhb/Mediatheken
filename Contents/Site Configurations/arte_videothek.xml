@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site site="http://videos.arte.tv"
+	plugin="http://videos.arte.tv/blob/web/i18n/view/player_.*\.swf"
+	initialState="playing"
+	version="1.0">
+
+	<crop x="0" y="6" width="720" height="405" />
+
+    <seekbar type="simple">
+    	<start x="60" y="382" />
+		<end x="457" y="382" />
+		<played>
+			<color rgb="30B2E8" />
+		</played>
+	</seekbar>
+	
+<!-- PLAYING -->
+	<state name="playing">
+		<event>
+			<condition>
+				<command name="pause" />
+			</condition>
+			<action>
+				<move x="360" y="445" />
+   	     		<pause time="100" />
+				<click x="360" y="445" />
+				<goto state="paused" />
+			</action>
+		</event>
+	</state>
+
+<!-- PAUSED -->
+	<state name="paused">
+		<event>
+			<condition>
+				<command name="play" />
+			</condition>
+			<action>
+        		<move x="360" y="445" />
+	        	<pause time="100" />
+				<click x="360" y="445" />
+				<goto state="playing" />
+			</action>
+		</event>
+	</state>
+
+</site>
