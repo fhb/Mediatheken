@@ -36,13 +36,29 @@ def Start():
 
 ####################################################################################################
 def MainMenu():
+	#Log(dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav1'], thumb=None), kanal=str(Prefs['fav1'].replace(" ","+")), minlength=0)))
+	#Log(dir.Append(Function(DirectoryItem(AlleSendungen,"Anne Will", thumb=content['image']), kanal="Anne Will", minlength=20)))
 	dir = MediaContainer(mediaType='items')
 	encoded = unicode('http://appdrive.net/mediathek/adapter/?api_v=plesk-plugin-1.0&query=anne+will', 'utf-8')
 	content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=None)
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Aktuell", thumb=None), kanal="Aktuell", minlength=0))	
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Anne Will", thumb=content['image']), kanal="Anne Will", minlength=20))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Aktuell", thumb=None), kanal="Aktuell", minlength=0))
+	#fav1=unicode(Prefs['fav1'].replace(" ","+"), 'utf-8').replace("%2B", "+")
+	#fav1=unicode(Prefs['fav1'], 'utf-8')
+	if Prefs['fav1'] != None and Prefs['fav1'] != "None" and Prefs['fav1'] != ""and Prefs['fav1'] != "none":
+		Log(Prefs['fav1'])
+		fav1=unicode(Prefs['fav1'], 'utf-8')
+		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav1'], thumb=None), kanal=fav1, minlength=0))
+	if Prefs['fav2'] != None and Prefs['fav2'] != "None" and Prefs['fav2'] != ""and Prefs['fav2'] != "none":
+		Log(Prefs['fav2'])
+		fav2=unicode(Prefs['fav2'], 'utf-8')
+		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav2'], thumb=None), kanal=fav2, minlength=0))
+	if Prefs['fav3'] != None and Prefs['fav3'] != "None" and Prefs['fav3'] != ""and Prefs['fav3'] != "none":
+		Log(Prefs['fav3'])
+		fav3=unicode(Prefs['fav3'], 'utf-8')
+		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav3'], thumb=None), kanal=fav3, minlength=0))
+	#dir.Append(Function(DirectoryItem(AlleSendungen,"Anne Will", thumb=content['image']), kanal="Anne Will", minlength=20))
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"ARD Mittagsmagazin", thumb=None), kanal="ARD Mittagsmagazin", minlength=20))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Hart aber fair", thumb=None), kanal="Hart aber fair", minlength=20))
+	#dir.Append(Function(DirectoryItem(AlleSendungen,"Hart aber fair", thumb=None), kanal="Hart aber fair", minlength=20))
 	dir.Append(Function(DirectoryItem(Kategorien,"Sendungen nach Kategorien", thumb=None)))
 	
    	dir.Append(PrefsItem(title="Einstellungen",subtile="",summary="",thumb=R(THUMB_PREFS)))
