@@ -18,6 +18,7 @@ THUMB	                = "icon-default.png"
 THUMB_PREFS				= "icon-prefs.png"
 ART                     = "art-default.jpg"
 ART_EMPTY				= "art-empty.jpg"
+FAV_LIST				= "Favoriten"
 
 
 CACHE_INTERVAL              = 3600
@@ -28,6 +29,8 @@ DEBUG                       = True
 def Start():
   Plugin.AddPrefixHandler(PLUGIN_PREFIX, MainMenu, "Mediatheken",THUMB, ART)
   Plugin.AddViewGroup("InfoList", viewMode="InfoList", mediaType="items")
+  #PopulateInitialFavList()
+
   HTTP.CacheTime = 3600
   MediaContainer.art        =R(ART_EMPTY)
   MediaContainer.title1 	=NAME
@@ -36,14 +39,12 @@ def Start():
 
 ####################################################################################################
 def MainMenu():
-	#Log(dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav1'], thumb=None), kanal=str(Prefs['fav1'].replace(" ","+")), minlength=0)))
-	#Log(dir.Append(Function(DirectoryItem(AlleSendungen,"Anne Will", thumb=content['image']), kanal="Anne Will", minlength=20)))
-	dir = MediaContainer(mediaType='items')
-	encoded = unicode('http://appdrive.net/mediathek/adapter/?api_v=plesk-plugin-1.0&query=anne+will', 'utf-8')
-	content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=None)
+	dir = MediaContainer(viewGroup='InfoList', mediaType='items', noCache=True)
+	#encoded = unicode('http://appdrive.net/mediathek/adapter/?api_v=plesk-plugin-1.0&query=anne+will', 'utf-8')
+	#content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=None)
 	dir.Append(Function(DirectoryItem(AlleSendungen,"Aktuell", thumb=None), kanal="Aktuell", minlength=0))
-	#fav1=unicode(Prefs['fav1'].replace(" ","+"), 'utf-8').replace("%2B", "+")
-	#fav1=unicode(Prefs['fav1'], 'utf-8')
+	dir.Append(Function(DirectoryItem(Favoriten,"Favoriten", thumb=None)))
+
 	if Prefs['fav1'] != None and Prefs['fav1'] != "None" and Prefs['fav1'] != ""and Prefs['fav1'] != "none":
 		Log(Prefs['fav1'])
 		fav1=unicode(Prefs['fav1'], 'utf-8')
@@ -59,8 +60,12 @@ def MainMenu():
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"Anne Will", thumb=content['image']), kanal="Anne Will", minlength=20))
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"ARD Mittagsmagazin", thumb=None), kanal="ARD Mittagsmagazin", minlength=20))
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"Hart aber fair", thumb=None), kanal="Hart aber fair", minlength=20))
-	dir.Append(Function(DirectoryItem(Kategorien,"Sendungen nach Kategorien", thumb=None)))
-	
+
+	dir.Append(Function(DirectoryItem(Kategorien,"Kategorien", thumb=None)))
+	dir.Append(Function(DirectoryItem(MoeglicheFavoriten,"Alle Kanäle", thumb=None)))
+
+
+	dir.Append(Function(InputDirectoryItem(Search, title=L('search'), prompt="Suche dein Video", thumb=R("icon-search.png"))))
    	dir.Append(PrefsItem(title="Einstellungen",subtile="",summary="",thumb=R(THUMB_PREFS)))
 
 	
@@ -68,19 +73,37 @@ def MainMenu():
 	return MessageContainer("No items available", "There are no items available.")
 ####################################################################################################
 def Kategorien(sender):
-	dir = MediaContainer(mediaType='items')
-	dir.title2="Kategorien"
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Talkshow", thumb=None), kanal="Talkshow", minlength=20))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Dokumentation", thumb=None), kanal="Dokumentation", minlength=10))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Comedy/Kaberett", thumb=None), kanal="Comedy", minlength=0))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Kinder", thumb=None), kanal="Kinder", minlength=0))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Krimi", thumb=None), kanal="Krimi", minlength=15))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Magazin/Ratgeber", thumb=None), kanal="Magazin", minlength=5))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Nachrichten", thumb=None), kanal="Nachrichten", minlength=0))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Serie", thumb=None), kanal="Serie", minlength=15))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Show", thumb=None), kanal="Show", minlength=10))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Spielfilm", thumb=None), kanal="Film", minlength=30))
-	dir.Append(Function(DirectoryItem(AlleSendungen,"Wissen", thumb=None), kanal="Wissen", minlength=0))
+	menu = ContextMenu(includeStandardItems=False)
+ 	menu.Append(Function(DirectoryItem(AddChannel, "Favorit hinzufügen")))
+	dir = MediaContainer(viewGroup='Details',contextMenu=menu, title2=sender.itemTitle)
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Talkshow", contextKey="Talkshow",contextArgs={}, thumb=None), kanal="Talkshow", minlength=20))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Dokumentation", contextKey="Dokumentation",contextArgs={}, thumb=None), kanal="Dokumentation", minlength=10))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Comedy/Kaberett", contextKey="Comedy",contextArgs={}, thumb=None), kanal="Comedy", minlength=0))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Kinder", contextKey="Kinder",contextArgs={}, thumb=None), kanal="Kinder", minlength=0))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Krimi", contextKey="Krimi",contextArgs={}, thumb=None), kanal="Krimi", minlength=15))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Magazin/Ratgeber", contextKey="Magazin",contextArgs={}, thumb=None), kanal="Magazin", minlength=5))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Nachrichten", contextKey="Nachrichten",contextArgs={}, thumb=None), kanal="Nachrichten", minlength=0))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Serie", contextKey="Serie",contextArgs={}, thumb=None), kanal="Serie", minlength=15))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Show", contextKey="Show",contextArgs={}, thumb=None), kanal="Show", minlength=10))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Spielfilm", contextKey="Film",contextArgs={}, thumb=None), kanal="Film", minlength=30))
+	dir.Append(Function(DirectoryItem(AlleSendungen,"Wissen", contextKey="Wissen",contextArgs={}, thumb=None), kanal="Wissen", minlength=0))
+
+	return dir
+####################################################################################################
+####################################################################################################
+def Favoriten(sender):
+	menu = ContextMenu(includeStandardItems=False)
+ 	menu.Append(Function(DirectoryItem(RemoveFav, "Favorit entfernen")))
+
+  	dir = MediaContainer(viewGroup='InfoList', contextMenu=menu, noCache=True)
+	#dir = MediaContainer(mediaType='items',contextMenu=menu)
+	dir.title2="Favoriten"
+	if not Data.Exists(FAV_LIST):
+    		PopulateInitialFavList()
+  	favList = Data.LoadObject(FAV_LIST)
+  	for fav in favList:
+  		fav=unicode(fav, 'utf-8')
+		dir.Append(Function(DirectoryItem(AlleSendungen, fav, contextKey=fav,contextArgs={}, thumb=None), kanal=fav, minlength=0))
 	return dir
 ####################################################################################################
 
@@ -258,11 +281,83 @@ def Extracts(sender):
 	return dir
 
 ####################################################################################################
+####################################################################################################
+def MoeglicheFavoriten(sender):
+		menu = ContextMenu(includeStandardItems=False)
+ 		menu.Append(Function(DirectoryItem(AddChannel, "Favorit hinzufügen")))
+		dir = MediaContainer(viewGroup='Details',contextMenu=menu, title2=sender.itemTitle)
+		channellist=["Anne Will", "Neues aus der Anstalt", "Hart aber Fair"]
+		#dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Anne Will")))
+		#dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Neues aus der Anstalt")))
+		dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Hart aber Fair")))
+		for channel in channellist:
+			dir.Append(Function(DirectoryItem(AlleSendungen, channel, contextKey=channel,contextArgs={}, thumb=None), kanal=channel, minlength=0))
 
-#####Funktionen:
+		#dirs=dir
+		return dir
 
 ####################################################################################################
+def AddChannelMenu(sender):
+    	dir = MediaContainer()
+    	dir.Append(Function(DirectoryItem(AddChannel, "Füge Kanal '"+sender.itemTitle+"' hinzu"), query=sender.itemTitle))
+    	return dir
+####################################################################################################
+    
+def Search(sender, query):
+  #callback = HTTP.Request(AMT_SEARCH_URL % String.Quote(query)).content
+  #if callback is None: return None
+ # callback = callback.lstrip("searchCallback(")[:-3]
+  #d = JSON.ObjectFromString(callback)
+  dir = MediaContainer(title1="Search", title2=sender.itemTitle)
+  #for item in d["results"]:
+   # if item["location"].find("phobos.apple.com") == -1:
+    #  thumb = AMT_SITE_URL + item["poster"]
+     # dir.Append(Function(VideoItem(getVideo, title=item["title"], thumb=thumb), url=AMT_SITE_URL + item["location"]))
+  #if len(dir) == 0:
+  dir.Append(DirectoryItem("%s/search" % PLUGIN_PREFIX, "(No Results)", ""))
+  return dir
 
+####################################################################################################
+####################################################################################################
+
+#####Funktionen:
+####################################################################################################
+def PopulateInitialFavList():
+	if not Data.Exists(FAV_LIST):
+    		favList = ["Anne Will", "Hart aber Fair"] 
+    		Data.SaveObject(FAV_LIST, favList)
+
+####################################################################################################
+#########################################################
+def AddChannel(sender, **key):
+	if key !=None and key!= "":
+		for i in key:
+			query=key[i]
+			Log(query)
+	else:
+		Log(sender.itemTitle[sender.itemTitle.find("Füge Kanal '")+13:sender.itemTitle.find("' hinzu")])
+		query=sender.itemTitle[sender.itemTitle.find("Füge Kanal '")+13:sender.itemTitle.find("' hinzu")]
+	if not Data.Exists(FAV_LIST):
+    		PopulateInitialFavList()
+	favList = Data.LoadObject(FAV_LIST)
+	if query not in favList:
+			favList.append(query)
+			Data.SaveObject(FAV_LIST, favList)
+			message = L('successfull')
+			return MessageContainer("Hinzufügen", message)
+	else:
+			return MessageContainer("Hinzufügen gescheitert!", "Existiert bereits")
+    
+
+#########################################################
+####################################################################################################
+#########################################################
+def RemoveFav(sender, key, **kwargs):
+    favList = Data.LoadObject(FAV_LIST)
+    favList.remove(key)
+    Data.SaveObject(FAV_LIST, favList)
+    
+#########################################################
 #Richtige Kombination von Serie und Titel:
 
 def formatTitle(series,title,kanal):

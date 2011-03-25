@@ -8,19 +8,19 @@
   },
   {
   	"id": "fav1",
-  	"label": "Favorit 1",
+  	"label": "Hauptmenue Platz 1",
   	"type": "text",
   	"default": "Anne Will"
   },
   {
   	"id": "fav2",
-  	"label": "Favorit 2",
+  	"label": "Hauptmenü Platz 2",
   	"type": "text",
-  	"default": "Anne Will"
+  	"default": "Neues aus der Anstalt"
   },
   {
   	"id": "fav3",
-  	"label": "Favorit 3",
+  	"label": "Hauptmenü Platz 3",
   	"type": "text",
   	"default": "None"
   }
