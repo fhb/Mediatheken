@@ -46,15 +46,15 @@ def MainMenu():
 	if Prefs['fav1'] != None and Prefs['fav1'] != "None" and Prefs['fav1'] != ""and Prefs['fav1'] != "none":
 		Log(Prefs['fav1'])
 		fav1=unicode(Prefs['fav1'], 'utf-8')
-		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav1'], thumb=None), kanal=fav1, minlength=0))
+		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav1'], thumb=getthumb(Prefs['fav1'])), kanal=fav1, minlength=0))
 	if Prefs['fav2'] != None and Prefs['fav2'] != "None" and Prefs['fav2'] != ""and Prefs['fav2'] != "none":
 		Log(Prefs['fav2'])
 		fav2=unicode(Prefs['fav2'], 'utf-8')
-		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav2'], thumb=None), kanal=fav2, minlength=0))
+		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav2'], thumb=getthumb(Prefs['fav2'])), kanal=fav2, minlength=0))
 	if Prefs['fav3'] != None and Prefs['fav3'] != "None" and Prefs['fav3'] != ""and Prefs['fav3'] != "none":
 		Log(Prefs['fav3'])
 		fav3=unicode(Prefs['fav3'], 'utf-8')
-		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav3'], thumb=None), kanal=fav3, minlength=0))
+		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav3'], thumb=getthumb(Prefs['fav3'])), kanal=fav3, minlength=0))
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"Anne Will", thumb=content['image']), kanal="Anne Will", minlength=20))
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"ARD Mittagsmagazin", thumb=None), kanal="ARD Mittagsmagazin", minlength=20))
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"Hart aber fair", thumb=None), kanal="Hart aber fair", minlength=20))
@@ -101,7 +101,7 @@ def Favoriten(sender):
   	favList = Data.LoadObject(FAV_LIST)
   	for fav in favList:
   		fav=unicode(fav, 'utf-8')
-		dir.Append(Function(DirectoryItem(AlleSendungen, fav, contextKey=fav,contextArgs={}, thumb=None), kanal=fav, minlength=0))
+		dir.Append(Function(DirectoryItem(AlleSendungen, fav, contextKey=fav,contextArgs={}, thumb=getthumb(fav)), kanal=fav, minlength=0))
 	return dir
 ####################################################################################################
 
@@ -408,3 +408,18 @@ def formatTitle(series,title,kanal):
 		Log("++++Titelveränderung KEINE++++")
 	return title
 		
+#########################################################
+		
+def getthumb(kanal):
+		found=False
+		encoded = unicode('http://appdrive.net/mediathek/channels/list/', 'utf-8')
+		content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=3600)
+		for channel in content:
+			if channel['name']==kanal: 
+				found=True
+				if channel.has_key('image'):
+					return channel['image']
+				else:
+					return None
+		if found == False:
+			return None
