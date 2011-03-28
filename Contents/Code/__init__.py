@@ -40,8 +40,6 @@ def Start():
 ####################################################################################################
 def MainMenu():
 	dir = MediaContainer(viewGroup='InfoList', mediaType='items', noCache=True)
-	#encoded = unicode('http://appdrive.net/mediathek/adapter/?api_v=plesk-plugin-1.0&query=anne+will', 'utf-8')
-	#content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=None)
 	dir.Append(Function(DirectoryItem(AlleSendungen,"Aktuell", thumb=None), kanal="Aktuell", minlength=0))
 	dir.Append(Function(DirectoryItem(Favoriten,"Favoriten", thumb=None)))
 
@@ -287,11 +285,19 @@ def MoeglicheFavoriten(sender):
  		menu.Append(Function(DirectoryItem(AddChannel, "Favorit hinzufügen")))
 		dir = MediaContainer(viewGroup='Details',contextMenu=menu, title2=sender.itemTitle)
 		channellist=["Anne Will", "Neues aus der Anstalt", "Hart aber Fair"]
+		encoded = unicode('http://appdrive.net/mediathek/channels/list/', 'utf-8')
+		content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=3600)
+		for channel in content:
+			if channel.has_key('image'): 
+				dir.Append(Function(DirectoryItem(AlleSendungen, channel['name'], contextKey=channel['name'],contextArgs={}, thumb=channel['image']), kanal=channel['name'], minlength=0))			
+			else:
+				dir.Append(Function(DirectoryItem(AlleSendungen, channel['name'], contextKey=channel['name'],contextArgs={}, thumb=None), kanal=channel['name'], minlength=0))
+		
 		#dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Anne Will")))
 		#dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Neues aus der Anstalt")))
-		dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Hart aber Fair")))
-		for channel in channellist:
-			dir.Append(Function(DirectoryItem(AlleSendungen, channel, contextKey=channel,contextArgs={}, thumb=None), kanal=channel, minlength=0))
+		#dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Hart aber Fair")))
+		#for channel in channellist:
+		#	dir.Append(Function(DirectoryItem(AlleSendungen, channel, contextKey=channel,contextArgs={}, thumb=None), kanal=channel, minlength=0))
 
 		#dirs=dir
 		return dir
