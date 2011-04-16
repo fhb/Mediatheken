@@ -103,6 +103,8 @@ def Favoriten(sender):
   		try:
   			fav=unicode(fav, 'utf-8')
 		except TypeError:
+  			fav = fav.encode("iso-8859-1")
+  			fav = fav.decode("utf-8")
 			Log("Favorit schon im Unicode-Format")
 		dir.Append(Function(DirectoryItem(AlleSendungen, fav, contextKey=fav,contextArgs={}, thumb=getthumb(fav)), kanal=fav, minlength=0))
 	return dir
