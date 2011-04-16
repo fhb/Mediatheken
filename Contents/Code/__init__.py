@@ -165,7 +165,7 @@ def AlleSendungen(sender, kanal, minlength):
 		#Log(Prefs['zdfformat'])
 
 		#Prefs["quicktime"] == 1 and 
-		if Prefs['zdfformat']=="Quicktime" and ("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'] !=""):
+		if Prefs['zdfformat']=="Quicktime" and ("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'] !="") or (("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'].find("www.hr.gl-systemhaus.de/mp4") !=-1))  :
 			url=content['items'][i]['quicktime']
 			quicktime=True
 		#Betrifft das Schweizer Fernsehen:
