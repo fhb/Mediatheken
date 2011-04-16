@@ -100,7 +100,10 @@ def Favoriten(sender):
     		PopulateInitialFavList()
   	favList = Data.LoadObject(FAV_LIST)
   	for fav in favList:
-  		fav=unicode(fav, 'utf-8')
+  		try:
+  			fav=unicode(fav, 'utf-8')
+		except TypeError:
+			Log("Favorit schon im Unicode-Format")
 		dir.Append(Function(DirectoryItem(AlleSendungen, fav, contextKey=fav,contextArgs={}, thumb=getthumb(fav)), kanal=fav, minlength=0))
 	return dir
 ####################################################################################################
