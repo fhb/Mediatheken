@@ -100,11 +100,10 @@ def Favoriten(sender):
     		PopulateInitialFavList()
   	favList = Data.LoadObject(FAV_LIST)
   	for fav in favList:
+  		
   		try:
   			fav=unicode(fav, 'utf-8')
 		except TypeError:
-  			fav = fav.encode("iso-8859-1")
-  			fav = fav.decode("utf-8")
 			Log("Favorit schon im Unicode-Format")
 		dir.Append(Function(DirectoryItem(AlleSendungen, fav, contextKey=fav,contextArgs={}, thumb=getthumb(fav)), kanal=fav, minlength=0))
 	return dir
@@ -115,10 +114,26 @@ def AlleSendungen(sender, kanal, minlength):
 	dir = MediaContainer(mediaType='items')
 	dir.title2=kanal
 	extractdir = MediaContainer(mediaType='items')
-	encoded='http://appdrive.net/mediathek/adapter/?api_v=plesk-plugin-1.0&query='+String.Quote(kanal, usePlus=True)
-	encoded = unicode(encoded, 'utf-8')
+	if kanal == "ARD-Mittagsmagazin":
+		kanal=kanal.replace("-", "+")
+	if kanal == "Käpt'n Blaubär":
+		kanal=kanal.replace("'", "")	
+	try:
+		encoded='http://appdrive.net/mediathek/adapter/?api_v=plesk-plugin-1.0&query='+String.Quote(kanal, usePlus=True)
+		#encoded = unicode(encoded, 'utf-8')
+		encoded = encoded.encode("utf-8")
+	except:
+			encoded='http://appdrive.net/mediathek/adapter/?api_v=plesk-plugin-1.0&query='+kanal.replace(" ","+")
+			encoded=encoded.encode("utf-8")
+			Log("Favorit schon im Unicode-Format")
+	
+	Log(encoded)
 	content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=None)
 	extractexists=False
+	mainepisodeexists=False
+	if content == []:
+		return MessageContainer(kanal, "Keine Daten zu diesem Kanal erhältlich, hier wird noch gewerkelt ;-)")
+
 	if "fullEpisodeLength" in content:
 		minlength=int(content['fullEpisodeLength'])
 	else:
@@ -127,29 +142,63 @@ def AlleSendungen(sender, kanal, minlength):
 	countfulllength=0
 	countextract=0
 	for i in range(len(content['items'])):
-		durationstring=content['items'][i]['duration']
+		try:
+			durationstring=content['items'][i]['duration']
+		except:
+			durationstring=""
+			Log("Keine Dauer angegeben")
 		if durationstring != "":
-			if durationstring.count(":")==2:
+			if durationstring.count("h")==1:
+				durationinhours=int(content['items'][i]['duration'][0:durationstring.find("h")])
+				durationinminutes=int(content['items'][i]['duration'][durationstring.find("h")+1:].replace(" ",""))
+				durationinseconds=0
+			elif durationstring.count(":")==2:
 				durationinhours=int(content['items'][i]['duration'][0:durationstring.find(":")])
 				durationinminutes=int(content['items'][i]['duration'][durationstring.find(":")+1:durationstring[0:durationstring.find(":")].find(":")-2])
+				durationinseconds=int(content['items'][i]['duration'][-2:])
 			else:
 				durationinhours=0
 				durationinminutes=int(content['items'][i]['duration'][0:durationstring.find(":")])
-			durationinseconds=int(content['items'][i]['duration'][-2:])
+				durationinseconds=int(content['items'][i]['duration'][-2:])
+			
 			duration=durationinhours*3600000+durationinminutes*60000+durationinseconds*1000
+			
 		else:
 			duration=None
-		
-		title=content['items'][i]['title']
+		try:
+			title=content['items'][i]['title']
+		except:
+			title=""
+			Log("Title nicht im JSON enthalten")			
 		#Nur wenn der gesamte Titel von Gänsefüßchen umfasst ist, sollen diese entfernt werden:
 		if title[0] == '"' and title[-1:] == '"':
 			title=title.strip('"')
-		thumbnail=content['items'][i]['thumbnailLarge']
-		timestamp=content['items'][i]['timestamp'][:-6]
-		summary=content['items'][i]['description']
+		try:
+			thumbnail=content['items'][i]['thumbnailLarge']
+		except:
+			thumbnail=None
+			Log("thumbnailLarge nicht im JSON enthalten")			
+		try:
+			timestamp=content['items'][i]['timestamp'][:-6]
+		except:
+			timestamp="Unknown"
+			Log("Timestamp nicht im JSON enthalten")			
+		try:
+			summary=content['items'][i]['description']
+		except:
+			summary=""
+			Log("Description nicht im JSON enthalten")			
 		summary=summary.encode('utf-8')
-		datum=content['items'][i]['date']
-		provider=date=content['items'][i]['provider']
+		try:
+			datum=content['items'][i]['date']
+		except:
+			datum="Unknown"
+			Log("Date nicht im JSON enthalten")			
+		try:
+			provider=date=content['items'][i]['provider']
+		except:
+			provider="Unknown"
+			Log("Provider nicht im JSON enthalten")
 		downloadParam=content['items'][i]['downloadParam']
 		series=content['items'][i]['series'].strip('"')
 		#Richtige Kombination von Serie und Titel:
@@ -170,10 +219,10 @@ def AlleSendungen(sender, kanal, minlength):
 			quicktime=True
 		#Betrifft das Schweizer Fernsehen:
 		elif downloadParam.find("www.videoportal.sf.tv") != -1:
-				url=content['items'][i]['url']
+				url=content['items'][i]['URL']
 				webvideo=True
 		elif downloadParam.find("videos.arte.tv") != -1:
-				url=content['items'][i]['url']
+				url=content['items'][i]['URL']
 				webvideo=True
 		else:
 			#Betrifft alle Videos ohne Trennung von clip und url:
@@ -226,6 +275,7 @@ def AlleSendungen(sender, kanal, minlength):
 		#Alle Videos hinzufügen, die entweder länger als die vorgegebene Mindestlänge
 		#sind oder keine Dauer angegeben haben:
 		if duration >= minlength*60000 or duration==None:
+			mainepisodeexists=True
 			if duration==None:
 				durationstring="??"
 			countfulllength=countfulllength+1
@@ -273,9 +323,12 @@ def AlleSendungen(sender, kanal, minlength):
 		dir.Append(Function(DirectoryItem(Extracts, "Ausschnitte", duration=None, summary="Alle Videos, die kürzer als "+str(minlength)+" Minuten sind.")))
 		#aus irgendeinem Grund geht die übergabe durch die funktion nicht mehr
 		Dict['foo'] = extractdir
-
+	if extractexists or mainepisodeexists:
 	#dir=dir.Sort("datum")
-	return dir
+		return dir
+	else:
+		
+		return MessageContainer(kanal, "Es gibt aktuell keine Sendungen für diesen Kanal")
 
 ####################################################################################################
 def Extracts(sender):
@@ -352,6 +405,10 @@ def AddChannel(sender, **key):
     		PopulateInitialFavList()
 	favList = Data.LoadObject(FAV_LIST)
 	if query not in favList:
+			try:
+  				query=unicode(query, 'utf-8')
+			except TypeError:
+				Log("Favorit schon im Unicode-Format")
 			favList.append(query)
 			Data.SaveObject(FAV_LIST, favList)
 			message = L('successfull')
@@ -420,7 +477,8 @@ def getthumb(kanal):
 		encoded = unicode('http://appdrive.net/mediathek/channels/list/', 'utf-8')
 		content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=3600)
 		for channel in content:
-			if channel['name']==kanal: 
+			#Log(channel['name'].encode("utf-8"))
+			if channel['name'].encode("utf-8")==kanal: 
 				found=True
 				if channel.has_key('image'):
 					return channel['image']
