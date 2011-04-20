@@ -114,7 +114,7 @@ def AlleSendungen(sender, kanal, minlength):
 	dir = MediaContainer(mediaType='items')
 	dir.title2=kanal
 	extractdir = MediaContainer(mediaType='items')
-	if kanal == "ARD-Mittagsmagazin":
+	if kanal == "ARD-Mittagsmagazin" or kanal == "Alisa - Folge deinem Herzen":
 		kanal=kanal.replace("-", "+")
 	if kanal == "Käpt'n Blaubär":
 		kanal=kanal.replace("'", "")	
@@ -337,19 +337,67 @@ def Extracts(sender):
 	return dir
 
 ####################################################################################################
+
 ####################################################################################################
-def MoeglicheFavoriten(sender):
+####################################################################################################
+
+def DividedByFirstLetter(sender,lettersections={}):
 		menu = ContextMenu(includeStandardItems=False)
  		menu.Append(Function(DirectoryItem(AddChannel, "Favorit hinzufügen")))
 		dir = MediaContainer(viewGroup='Details',contextMenu=menu, title2=sender.itemTitle)
 		channellist=["Anne Will", "Neues aus der Anstalt", "Hart aber Fair"]
 		encoded = unicode('http://appdrive.net/mediathek/channels/list/', 'utf-8')
 		content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=3600)
+		notfound=True
+		def sort_inner(inner):
+			return inner['name'].lower()
+		content.sort(key=sort_inner)
+	
 		for channel in content:
-			if channel.has_key('image'): 
-				dir.Append(Function(DirectoryItem(AlleSendungen, channel['name'], contextKey=channel['name'],contextArgs={}, thumb=channel['image']), kanal=channel['name'], minlength=0))			
-			else:
-				dir.Append(Function(DirectoryItem(AlleSendungen, channel['name'], contextKey=channel['name'],contextArgs={}, thumb=None), kanal=channel['name'], minlength=0))
+			if sender.itemTitle=="123*":
+				for i in range (1,9):
+					if lettersections[i].find(channel['name'][0]) > -1 or lettersections[i].swapcase().find(channel['name'][0]) > -1:
+				 		notfound=False
+				if notfound:
+					if channel.has_key('image'): 
+						dir.Append(Function(DirectoryItem(AlleSendungen, title=channel['name'], contextKey=channel['name'],contextArgs={}, thumb=channel['image']), kanal=channel['name'], minlength=0))			
+					else:
+						dir.Append(Function(DirectoryItem(AlleSendungen, title=channel['name'], contextKey=channel['name'],contextArgs={}, thumb=None), kanal=channel['name'], minlength=0))
+				
+			elif sender.itemTitle=="Alle":
+				if channel.has_key('image'): 
+					dir.Append(Function(DirectoryItem(AlleSendungen, title=channel['name'], contextKey=channel['name'],contextArgs={}, thumb=channel['image']), kanal=channel['name'], minlength=0))			
+				else:
+					dir.Append(Function(DirectoryItem(AlleSendungen, title=channel['name'], contextKey=channel['name'],contextArgs={}, thumb=None), kanal=channel['name'], minlength=0))
+			elif sender.itemTitle.find(channel['name'][0]) > -1 or sender.itemTitle.swapcase().find(channel['name'][0]) > -1:
+				if channel.has_key('image'): 
+					dir.Append(Function(DirectoryItem(AlleSendungen, title=channel['name'], contextKey=channel['name'],contextArgs={}, thumb=channel['image']), kanal=channel['name'], minlength=0))			
+				else:
+					dir.Append(Function(DirectoryItem(AlleSendungen, title=channel['name'], contextKey=channel['name'],contextArgs={}, thumb=None), kanal=channel['name'], minlength=0))
+		#dir=dir.Sort('title')
+		return dir
+####################################################################################################
+		
+def MoeglicheFavoriten(sender):
+		#menu = ContextMenu(includeStandardItems=False)
+ 		#menu.Append(Function(DirectoryItem(AddChannel, "Favorit hinzufügen")))
+		#dir = MediaContainer(viewGroup='Details',contextMenu=menu, title2=sender.itemTitle)
+		dir = MediaContainer(viewGroup='Details', title2=sender.itemTitle)
+
+		#channellist=["Anne Will", "Neues aus der Anstalt", "Hart aber Fair"]
+		#encoded = unicode('http://appdrive.net/mediathek/channels/list/', 'utf-8')
+		#content = JSON.ObjectFromURL(encoded, values=None, headers={}, cacheTime=3600)
+		
+		lettersections = ("Alle","abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz", "123*")
+		for section in lettersections:
+			dir.Append(Function(DirectoryItem(DividedByFirstLetter, section),lettersections=lettersections))			
+
+
+		#for channel in content:
+		#	if channel.has_key('image'): 
+		#		dir.Append(Function(DirectoryItem(AlleSendungen, channel['name'], contextKey=channel['name'],contextArgs={}, thumb=channel['image']), kanal=channel['name'], minlength=0))			
+		#	else:
+		#		dir.Append(Function(DirectoryItem(AlleSendungen, channel['name'], contextKey=channel['name'],contextArgs={}, thumb=None), kanal=channel['name'], minlength=0))
 		
 		#dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Anne Will")))
 		#dir.Append(Function(PopupDirectoryItem(AddChannelMenu, title="Neues aus der Anstalt")))
