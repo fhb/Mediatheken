@@ -34,6 +34,7 @@ def Start():
   HTTP.CacheTime = 3600
   MediaContainer.art        =R(ART_EMPTY)
   MediaContainer.title1 	=NAME
+  MediaContainer.userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B500 Safari/531.21.10'
   DirectoryItem.thumb       =R(THUMB)
 
 
@@ -45,15 +46,15 @@ def MainMenu():
 
 	if Prefs['fav1'] != None and Prefs['fav1'] != "None" and Prefs['fav1'] != ""and Prefs['fav1'] != "none":
 		Log(Prefs['fav1'])
-		fav1=unicode(Prefs['fav1'], 'utf-8')
+		fav1=Prefs['fav1'].encode("utf-8")
 		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav1'], thumb=getthumb(Prefs['fav1'])), kanal=fav1, minlength=0))
 	if Prefs['fav2'] != None and Prefs['fav2'] != "None" and Prefs['fav2'] != ""and Prefs['fav2'] != "none":
 		Log(Prefs['fav2'])
-		fav2=unicode(Prefs['fav2'], 'utf-8')
+		fav2=Prefs['fav2'].encode("utf-8")
 		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav2'], thumb=getthumb(Prefs['fav2'])), kanal=fav2, minlength=0))
 	if Prefs['fav3'] != None and Prefs['fav3'] != "None" and Prefs['fav3'] != ""and Prefs['fav3'] != "none":
 		Log(Prefs['fav3'])
-		fav3=unicode(Prefs['fav3'], 'utf-8')
+		fav3=Prefs['fav3'].encode("utf-8")
 		dir.Append(Function(DirectoryItem(AlleSendungen,Prefs['fav3'], thumb=getthumb(Prefs['fav3'])), kanal=fav3, minlength=0))
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"Anne Will", thumb=content['image']), kanal="Anne Will", minlength=20))
 	#dir.Append(Function(DirectoryItem(AlleSendungen,"ARD Mittagsmagazin", thumb=None), kanal="ARD Mittagsmagazin", minlength=20))
@@ -114,10 +115,16 @@ def AlleSendungen(sender, kanal, minlength):
 	dir = MediaContainer(mediaType='items')
 	dir.title2=kanal
 	extractdir = MediaContainer(mediaType='items')
-	if kanal == "ARD-Mittagsmagazin" or kanal == "Alisa - Folge deinem Herzen":
-		kanal=kanal.replace("-", "+")
+	if kanal == "ARD-Mittagsmagazin":
+		kanal=kanal.replace("-", " ")
 	if kanal == "Käpt'n Blaubär":
-		kanal=kanal.replace("'", "")	
+		kanal=kanal.replace("'", "")
+	if kanal == "Alisa - Folge deinem Herzen" or kanal == "Andreas Kieling - Mitten in Südafrika":
+		kanal=kanal.replace("- ", "")
+	if kanal == "alle wetter!":
+		kanal=kanal.replace("!", "")
+	if kanal == "betrifft: ...":
+		kanal=kanal.replace(": ...", "")
 	try:
 		encoded='http://appdrive.net/mediathek/adapter/?api_v=plesk-plugin-1.0&query='+String.Quote(kanal, usePlus=True)
 		#encoded = unicode(encoded, 'utf-8')
@@ -416,17 +423,169 @@ def AddChannelMenu(sender):
 ####################################################################################################
     
 def Search(sender, query):
-  #callback = HTTP.Request(AMT_SEARCH_URL % String.Quote(query)).content
+  callback = HTTP.Request('http://www.google.com/uds/GwebSearch?callback=google.search.WebSearch.RawCompletion&context=1&rsz=filtered_cse&hl=de&gss=.com&sig=da11a17ee21435ab38fe3d34c57b4e8b&cx=014431000034967528768:scz9lbwxdqo&safe=off&gl=www.google.com&key=ABQIAAAAq_0-TQsgBs1QlAUxmdV1UxSeknJyBXcko34g8MPGNN5gQRB3TRSwRdSZoWhUGYnPC9seIMsruNVcBA&v=1.0&nocache=13036547900&q=%s' % String.Quote(query)).content
+  count=0
+ # Log(callback)
+  callback=callback[callback.find('"results":[')+10:callback.find('],"cursor":')+1]
+  Log(callback)
   #if callback is None: return None
  # callback = callback.lstrip("searchCallback(")[:-3]
-  #d = JSON.ObjectFromString(callback)
-  dir = MediaContainer(title1="Search", title2=sender.itemTitle)
-  #for item in d["results"]:
-   # if item["location"].find("phobos.apple.com") == -1:
-    #  thumb = AMT_SITE_URL + item["poster"]
-     # dir.Append(Function(VideoItem(getVideo, title=item["title"], thumb=thumb), url=AMT_SITE_URL + item["location"]))
-  #if len(dir) == 0:
-  dir.Append(DirectoryItem("%s/search" % PLUGIN_PREFIX, "(No Results)", ""))
+  d = JSON.ObjectFromString(callback)
+  Log(d)
+  dir = MediaContainer(title2="Ergebnisse für: "+"'"+query+"'")
+  for item in d:
+  	url='http://appdrive.net/mediathek/api/1.4/debug.php?format=json&client=1.4.0&URL=' +item['url'].encode('utf-8')
+  	content = JSON.ObjectFromURL(url, values=None, headers={}, cacheTime=3600)
+	Log(content['title'])
+	try:
+		durationstring=content['duration']
+	except:
+		durationstring=""
+		Log("Keine Dauer angegeben")
+	if durationstring != "":
+		if durationstring.count("h")==1:
+			durationinhours=int(content['duration'][0:durationstring.find("h")])
+			durationinminutes=int(content['duration'][durationstring.find("h")+1:].replace(" ",""))
+			durationinseconds=0
+		elif durationstring.count(":")==2:
+			durationinhours=int(content['duration'][0:durationstring.find(":")])
+			durationinminutes=int(content['duration'][durationstring.find(":")+1:durationstring[0:durationstring.find(":")].find(":")-2])
+			durationinseconds=int(content['duration'][-2:])
+		else:
+			durationinhours=0
+			durationinminutes=int(content['duration'][0:durationstring.find(":")])
+			durationinseconds=int(content['duration'][-2:])
+			
+		duration=durationinhours*3600000+durationinminutes*60000+durationinseconds*1000
+			
+	else:
+		duration=None
+	try:
+		title=content['title']
+	except:
+		title=""
+		Log("Title nicht im JSON enthalten")			
+	#Nur wenn der gesamte Titel von Gänsefüßchen umfasst ist, sollen diese entfernt werden:
+	if title[0] == '"' and title[-1:] == '"':
+		title=title.strip('"')
+	try:
+		thumbnail=content['thumbnailLarge']
+	except:
+		thumbnail=None
+		Log("thumbnailLarge nicht im JSON enthalten")			
+	try:
+		timestamp=content['timestamp'][:-6]
+	except:
+		timestamp="Unknown"
+		Log("Timestamp nicht im JSON enthalten")			
+	try:
+		summary=content['description']
+	except:
+		summary=""
+		Log("Description nicht im JSON enthalten")			
+	summary=summary.encode('utf-8')
+	try:
+		datum=content['date']
+	except:
+		datum="Unknown"
+		Log("Date nicht im JSON enthalten")			
+	try:
+		provider=date=content['provider']
+	except:
+		provider="Unknown"
+		Log("Provider nicht im JSON enthalten")
+	downloadParam=content['downloadParam']
+	series=content['series'].strip('"')
+	#Richtige Kombination von Serie und Titel:
+	title=formatTitle(series,title,"")
+		
+	url=""
+	clip=""
+	webvideo=False
+	quicktime=False
+	
+	#Betrifft vor allem ZDF-Beiträge:
+	#Log("Quicktime Stream" + str())
+	#Log(Prefs['zdfformat'])
+	#Prefs["quicktime"] == 1 and 
+	if Prefs['zdfformat']=="Quicktime" and ("quicktime" in content) and (content['quicktime'] !="") or (("quicktime" in content) and (content['quicktime'].find("www.hr.gl-systemhaus.de/mp4") !=-1))  :
+		url=content['quicktime']
+		quicktime=True
+	#Betrifft das Schweizer Fernsehen:
+	elif downloadParam.find("www.videoportal.sf.tv") != -1:
+			url=content['URL']
+			webvideo=True
+	elif downloadParam.find("videos.arte.tv") != -1:
+			url=content['URL']
+			webvideo=True
+	else:
+		#Betrifft alle Videos ohne Trennung von clip und url:
+		if downloadParam.find("--playpath") ==-1:
+			clip=downloadParam[downloadParam.find("-r")+3:downloadParam.find("--")-1].strip('"')
+			if clip.find("MP4:")>-1:
+				clip=clip.strip('"')
+				url=clip[0:clip.find("MP4:")]
+				clip=clip[clip.find("MP4:"):]
+			if clip.find("mp4:")>-1:
+				clip=clip.strip('"')
+				url=clip[0:clip.find("mp4:")]
+				clip=clip[clip.find("mp4:"):]
+			
+			if clip.find("swr.fcod")>-1:
+				url=clip
+				clip=clip.partition("/")[2].partition("/")[2].partition("/")[2].partition("/")[2].partition("/")[2]
+				url=url.replace(clip,"")  
+			
+			if clip.find("vod")>-1:
+				url=clip[0:clip.find("vod")+3].strip('"')
+				if clip.find(".mp4")>-1:
+					clip="mp4:"+clip[clip.find("vod")+4:-4]
+				elif clip.find(".flv")>-1:
+					clip=clip[clip.find("vod")+4:-4]
+			if clip.find("ard/tv")>-1:
+				url=clip[1:clip.find("ard/tv")-1].strip('"')
+				clip=clip[clip.find("ard/tv"):-1].strip('"')
+			
+		
+		#Betrifft alle Videos die den String mp4 im Pfad haben:
+		elif downloadParam[downloadParam.find("--playpath")+11:downloadParam.find("--tcUrl")-1].find("mp4:")==-1 and downloadParam[downloadParam.find("--playpath")+11:downloadParam.find("--tcUrl")-1].find(".mp4")==1:
+			clip=downloadParam[downloadParam.find("--playpath")+11:downloadParam.find("--tcUrl")-1]
+			url=downloadParam[downloadParam.find("--tcUrl")+8:downloadParam.find("--app")-1]
+		
+		else:		
+			clip=downloadParam[downloadParam.find("--playpath")+11:downloadParam.find("--tcUrl")-1]
+			url=downloadParam[downloadParam.find("--tcUrl")+8:downloadParam.find("--app")-1]
+		
+		##Polizeiruf-Fix (?sen.....)		
+		if clip.find("?")>-1 and url.find("arte")==-1:
+			clip=clip[0:clip.find("?")]
+		clip=clip.encode('utf-8')
+		clip=String.Quote(clip, usePlus=True)
+		url=url.encode('utf-8')
+		url=String.Quote(url, usePlus=True)
+	if datum=="":
+		datum="Unbekannt"
+	if duration==None:
+		durationstring="??"
+	count=count+1
+	Log("Dauer '"+durationstring+"'")
+		
+	if quicktime:
+		dir.Append(VideoItem(url,title=title, subtitle=datum+" - Dauer: "+durationstring, summary=provider+" - "+summary, duration=duration, thumb=thumbnail))
+		#dir.Append(Function(VideoItem(url,title=title)))
+		Log("Quicktime-VideoItem "+str(VideoItem(url,title=title, subtitle=datum+" - Dauer: "+durationstring, summary=provider+" - "+summary, duration=duration, thumb=thumbnail)))
+	elif webvideo:
+		dir.Append(WebVideoItem(url, title=title, subtitle=datum+" - Dauer: "+durationstring, summary=provider+" - "+summary,thumb=thumbnail, art=None))
+		Log("Webvideo "+url)
+	else:
+		Log("Url-String '"+url+"'")
+		Log("Clip-String "+clip)
+		dir.Append(RTMPVideoItem(url, clip, width=1280, height=720, live=False, title=title, subtitle=datum+" - Dauer: "+durationstring, summary=provider+" - "+summary, duration=duration, thumb=thumbnail))
+	Log ("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+  Log("######################  Ingesamt "+str(count)+" Sendungen   ######################")
+  if count==0:
+  	dir.Append(DirectoryItem("%s/search" % PLUGIN_PREFIX, "(No Results)", ""))
   return dir
 
 ####################################################################################################
