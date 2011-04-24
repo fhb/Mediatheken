@@ -174,12 +174,13 @@ def AlleSendungen(sender, kanal, minlength):
 			duration=None
 		try:
 			title=content['items'][i]['title']
+			#Nur wenn der gesamte Titel von Gänsefüßchen umfasst ist, sollen diese entfernt werden:
+			if title[0] == '"' and title[-1:] == '"':
+				title=title.strip('"')
 		except:
 			title=""
 			Log("Title nicht im JSON enthalten")			
-		#Nur wenn der gesamte Titel von Gänsefüßchen umfasst ist, sollen diese entfernt werden:
-		if title[0] == '"' and title[-1:] == '"':
-			title=title.strip('"')
+		
 		try:
 			thumbnail=content['items'][i]['thumbnailLarge']
 		except:
@@ -206,8 +207,16 @@ def AlleSendungen(sender, kanal, minlength):
 		except:
 			provider="Unknown"
 			Log("Provider nicht im JSON enthalten")
-		downloadParam=content['items'][i]['downloadParam']
-		series=content['items'][i]['series'].strip('"')
+		try:
+			downloadParam=content['items'][i]['downloadParam']
+		except:
+			downloadParam=""
+			Log("Provider nicht im JSON enthalten")
+
+		try:
+			series=content['items'][i]['series'].strip('"')
+		except:
+			series=""
 		#Richtige Kombination von Serie und Titel:
 		title=formatTitle(series,title,kanal)
 		
@@ -234,7 +243,8 @@ def AlleSendungen(sender, kanal, minlength):
 		else:
 			#Betrifft alle Videos ohne Trennung von clip und url:
 			if downloadParam.find("--playpath") ==-1:
-				clip=downloadParam[downloadParam.find("-r")+3:downloadParam.find("--")-1].strip('"')
+				if downloadParam.find("-r")>-1:
+					clip=downloadParam[downloadParam.find("-r")+3:downloadParam.find("--")-1].strip('"')
 				if clip.find("MP4:")>-1:
 					clip=clip.strip('"')
 					url=clip[0:clip.find("MP4:")]
@@ -427,34 +437,53 @@ def Search(sender, query):
   count=0
  # Log(callback)
   callback=callback[callback.find('"results":[')+10:callback.find('],"cursor":')+1]
-  Log(callback)
+  #Log(callback)
   #if callback is None: return None
  # callback = callback.lstrip("searchCallback(")[:-3]
   d = JSON.ObjectFromString(callback)
-  Log(d)
+  #Log(d)
   dir = MediaContainer(title2="Ergebnisse für: "+"'"+query+"'")
   for item in d:
-  	url='http://appdrive.net/mediathek/api/1.4/debug.php?format=json&client=1.4.0&URL=' +item['url'].encode('utf-8')
+	url='http://appdrive.net/mediathek/api/1.4/debug.php?format=json&client=1.4.0&URL=' +item['url'].encode('utf-8')
   	content = JSON.ObjectFromURL(url, values=None, headers={}, cacheTime=3600)
-	Log(content['title'])
+  	if len(d)==1:
+  		try:
+  			test=content['error']
+  			dir.Append(DirectoryItem("%s/search" % PLUGIN_PREFIX, "(No Results)", ""))
+  			Log(test)
+  			return dir
+  		except:
+  			test="No Error"
+  	else:
+  		try:
+  			test=content['error']
+  			dir.Append(DirectoryItem("%s/search" % PLUGIN_PREFIX, "(Unsupported)", ""))
+  			Log(test)
+  		except:
+  			test="No Error"
+	#Log(content['title'])
 	try:
 		durationstring=content['duration']
 	except:
 		durationstring=""
 		Log("Keine Dauer angegeben")
 	if durationstring != "":
-		if durationstring.count("h")==1:
-			durationinhours=int(content['duration'][0:durationstring.find("h")])
-			durationinminutes=int(content['duration'][durationstring.find("h")+1:].replace(" ",""))
-			durationinseconds=0
-		elif durationstring.count(":")==2:
-			durationinhours=int(content['duration'][0:durationstring.find(":")])
-			durationinminutes=int(content['duration'][durationstring.find(":")+1:durationstring[0:durationstring.find(":")].find(":")-2])
-			durationinseconds=int(content['duration'][-2:])
-		else:
-			durationinhours=0
-			durationinminutes=int(content['duration'][0:durationstring.find(":")])
-			durationinseconds=int(content['duration'][-2:])
+		try:
+			if durationstring.count("h")==1:
+				durationinhours=int(content['duration'][0:durationstring.find("h")])
+				durationinminutes=int(content['duration'][durationstring.find("h")+1:].replace(" ",""))
+				durationinseconds=0
+			elif durationstring.count(":")==2:
+				durationinhours=int(content['duration'][0:durationstring.find(":")])
+				durationinminutes=int(content['duration'][durationstring.find(":")+1:durationstring[0:durationstring.find(":")].find(":")-2])
+				durationinseconds=int(content['duration'][-2:])
+			else:
+				durationinhours=0
+				durationinminutes=int(content['duration'][0:durationstring.find(":")])
+				durationinseconds=int(content['duration'][-2:])
+		except:
+			durationstring=""
+			Log("Error with durationstring happend! Please investigate around line 486")
 			
 		duration=durationinhours*3600000+durationinminutes*60000+durationinseconds*1000
 			
@@ -462,12 +491,13 @@ def Search(sender, query):
 		duration=None
 	try:
 		title=content['title']
+		#Nur wenn der gesamte Titel von Gänsefüßchen umfasst ist, sollen diese entfernt werden:
+
+		if title[0] == '"' and title[-1:] == '"':
+			title=title.strip('"')
 	except:
 		title=""
 		Log("Title nicht im JSON enthalten")			
-	#Nur wenn der gesamte Titel von Gänsefüßchen umfasst ist, sollen diese entfernt werden:
-	if title[0] == '"' and title[-1:] == '"':
-		title=title.strip('"')
 	try:
 		thumbnail=content['thumbnailLarge']
 	except:
@@ -494,8 +524,16 @@ def Search(sender, query):
 	except:
 		provider="Unknown"
 		Log("Provider nicht im JSON enthalten")
-	downloadParam=content['downloadParam']
-	series=content['series'].strip('"')
+	try:
+		downloadParam=content['downloadParam']
+	except:
+		downloadParam=""
+		Log("downloadParam nicht im JSON enthalten!")
+
+	try:
+		series=content['series'].strip('"')
+	except:
+		series=""
 	#Richtige Kombination von Serie und Titel:
 	title=formatTitle(series,title,"")
 		
@@ -518,10 +556,17 @@ def Search(sender, query):
 	elif downloadParam.find("videos.arte.tv") != -1:
 			url=content['URL']
 			webvideo=True
+	elif downloadParam=="":
+			dir.Append(DirectoryItem(url, title="Wichtige Parameter fehlen in der API!", subtitle=datum+" - Dauer: "+durationstring, summary=provider+" - " + title +" - "+summary,thumb=thumbnail, art=None))
+
 	else:
 		#Betrifft alle Videos ohne Trennung von clip und url:
 		if downloadParam.find("--playpath") ==-1:
-			clip=downloadParam[downloadParam.find("-r")+3:downloadParam.find("--")-1].strip('"')
+			
+			if downloadParam.find("-r")>-1:
+				clip=downloadParam[downloadParam.find("-r")+3:downloadParam.find("--")-1].strip('"')
+			else:
+				clip=downloadParam
 			if clip.find("MP4:")>-1:
 				clip=clip.strip('"')
 				url=clip[0:clip.find("MP4:")]
@@ -535,7 +580,7 @@ def Search(sender, query):
 				url=clip
 				clip=clip.partition("/")[2].partition("/")[2].partition("/")[2].partition("/")[2].partition("/")[2]
 				url=url.replace(clip,"")  
-			
+
 			if clip.find("vod")>-1:
 				url=clip[0:clip.find("vod")+3].strip('"')
 				if clip.find(".mp4")>-1:
@@ -545,8 +590,6 @@ def Search(sender, query):
 			if clip.find("ard/tv")>-1:
 				url=clip[1:clip.find("ard/tv")-1].strip('"')
 				clip=clip[clip.find("ard/tv"):-1].strip('"')
-			
-		
 		#Betrifft alle Videos die den String mp4 im Pfad haben:
 		elif downloadParam[downloadParam.find("--playpath")+11:downloadParam.find("--tcUrl")-1].find("mp4:")==-1 and downloadParam[downloadParam.find("--playpath")+11:downloadParam.find("--tcUrl")-1].find(".mp4")==1:
 			clip=downloadParam[downloadParam.find("--playpath")+11:downloadParam.find("--tcUrl")-1]
@@ -556,6 +599,8 @@ def Search(sender, query):
 			clip=downloadParam[downloadParam.find("--playpath")+11:downloadParam.find("--tcUrl")-1]
 			url=downloadParam[downloadParam.find("--tcUrl")+8:downloadParam.find("--app")-1]
 		
+			
+
 		##Polizeiruf-Fix (?sen.....)		
 		if clip.find("?")>-1 and url.find("arte")==-1:
 			clip=clip[0:clip.find("?")]
@@ -569,8 +614,10 @@ def Search(sender, query):
 		durationstring="??"
 	count=count+1
 	Log("Dauer '"+durationstring+"'")
-		
-	if quicktime:
+	
+	if test!="No Error":
+		return dir
+	elif quicktime:
 		dir.Append(VideoItem(url,title=title, subtitle=datum+" - Dauer: "+durationstring, summary=provider+" - "+summary, duration=duration, thumb=thumbnail))
 		#dir.Append(Function(VideoItem(url,title=title)))
 		Log("Quicktime-VideoItem "+str(VideoItem(url,title=title, subtitle=datum+" - Dauer: "+durationstring, summary=provider+" - "+summary, duration=duration, thumb=thumbnail)))
