@@ -37,7 +37,6 @@ def Start():
   MediaContainer.userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B500 Safari/531.21.10'
   DirectoryItem.thumb       =R(THUMB)
 
-
 ####################################################################################################
 def MainMenu():
 	dir = MediaContainer(viewGroup='InfoList', mediaType='items', noCache=True)
@@ -93,6 +92,8 @@ def Kategorien(sender):
 def Favoriten(sender):
 	menu = ContextMenu(includeStandardItems=False)
  	menu.Append(Function(DirectoryItem(RemoveFav, "Favorit entfernen")))
+ 	if Data.LoadObject(FAV_LIST)==[]:
+  		return MessageContainer("Info" , "Favoriten können mittels der Taste C hinzugefügt werden")
 
   	dir = MediaContainer(viewGroup='InfoList', contextMenu=menu, noCache=True)
 	#dir = MediaContainer(mediaType='items',contextMenu=menu)
@@ -185,7 +186,11 @@ def AlleSendungen(sender, kanal, minlength):
 			thumbnail=content['items'][i]['thumbnailLarge']
 		except:
 			thumbnail=None
-			Log("thumbnailLarge nicht im JSON enthalten")			
+			Log("thumbnailLarge nicht im JSON enthalten")	
+		
+		#####
+		valid=True
+		#####
 		try:
 			timestamp=content['items'][i]['timestamp'][:-6]
 		except:
@@ -229,6 +234,9 @@ def AlleSendungen(sender, kanal, minlength):
 		#Log("Quicktime Stream" + str())
 		#Log(Prefs['zdfformat'])
 
+		if downloadParam.find(".mp3")>-1 or downloadParam.find(".MP3")>-1:
+			valid=False
+			Log("MP3 => invalid")
 		#Prefs["quicktime"] == 1 and 
 		if Prefs['zdfformat']=="Quicktime" and ("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'] !="") or (("quicktime" in content['items'][i]) and (content['items'][i]['quicktime'].find("www.hr.gl-systemhaus.de/mp4") !=-1))  :
 			url=content['items'][i]['quicktime']
@@ -291,7 +299,9 @@ def AlleSendungen(sender, kanal, minlength):
 			
 		#Alle Videos hinzufügen, die entweder länger als die vorgegebene Mindestlänge
 		#sind oder keine Dauer angegeben haben:
-		if duration >= minlength*60000 or duration==None:
+		if valid == False:
+			Log("-----Invalid")
+		elif duration >= minlength*60000 or duration==None:
 			mainepisodeexists=True
 			if duration==None:
 				durationstring="??"
@@ -433,19 +443,35 @@ def AddChannelMenu(sender):
 ####################################################################################################
     
 def Search(sender, query):
-  callback = HTTP.Request('http://www.google.com/uds/GwebSearch?callback=google.search.WebSearch.RawCompletion&context=1&rsz=filtered_cse&hl=de&gss=.com&sig=da11a17ee21435ab38fe3d34c57b4e8b&cx=014431000034967528768:scz9lbwxdqo&safe=off&gl=www.google.com&key=ABQIAAAAq_0-TQsgBs1QlAUxmdV1UxSeknJyBXcko34g8MPGNN5gQRB3TRSwRdSZoWhUGYnPC9seIMsruNVcBA&v=1.0&nocache=13036547900&q=%s' % String.Quote(query)).content
   count=0
- # Log(callback)
-  callback=callback[callback.find('"results":[')+10:callback.find('],"cursor":')+1]
+  callbacksum="["
+  for i in range (0,2):
+  	callback = HTTP.Request('http://www.google.com/uds/GwebSearch?callback=google.search.WebSearch.RawCompletion&context=1&rsz=filtered_cse&hl=de&gss=.com&sig=da11a17ee21435ab38fe3d34c57b4e8b&cx=014431000034967528768:scz9lbwxdqo&safe=off&gl=www.google.com&key=ABQIAAAAq_0-TQsgBs1QlAUxmdV1UxSeknJyBXcko34g8MPGNN5gQRB3TRSwRdSZoWhUGYnPC9seIMsruNVcBA&v=1.0&nocache=13036547900&start='+str(i*10)+'&q=%s' % String.Quote(query)).content
+  	if i != 1:
+  		callbacksum=callbacksum+callback[callback.find('"results":[')+11:callback.find('],"cursor":')]+","
+  		Log(str(i)+" I in erster")
+  		
+  	else:
+  		Log(str(i)+" I sollte 5 sein")
+  		callbacksum=callbacksum+callback[callback.find('"results":[')+11:callback.find('],"cursor":')]
+  		callbacksum=callbacksum+"]"
+  
+  Log("hier")
+  #Log(callback)
+  #Log("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+  #callback=callback[callback.find('"results":[')+10:callback.find('],"cursor":')+1]
   #Log(callback)
   #if callback is None: return None
  # callback = callback.lstrip("searchCallback(")[:-3]
-  d = JSON.ObjectFromString(callback)
+  d = JSON.ObjectFromString(callbacksum)
   #Log(d)
   dir = MediaContainer(title2="Ergebnisse für: "+"'"+query+"'")
   for item in d:
 	url='http://appdrive.net/mediathek/api/1.4/debug.php?format=json&client=1.4.0&URL=' +item['url'].encode('utf-8')
-  	content = JSON.ObjectFromURL(url, values=None, headers={}, cacheTime=3600)
+  	try:
+  		content = JSON.ObjectFromURL(url, values=None, headers={}, cacheTime=3600)
+  	except:
+  		test="JSON-Error"
   	if len(d)==1:
   		try:
   			test=content['error']
@@ -457,7 +483,7 @@ def Search(sender, query):
   	else:
   		try:
   			test=content['error']
-  			dir.Append(DirectoryItem("%s/search" % PLUGIN_PREFIX, "(Unsupported)", ""))
+  			#dir.Append(DirectoryItem("%s/search" % PLUGIN_PREFIX, "(Unsupported)", ""))
   			Log(test)
   		except:
   			test="No Error"
@@ -502,7 +528,18 @@ def Search(sender, query):
 		thumbnail=content['thumbnailLarge']
 	except:
 		thumbnail=None
-		Log("thumbnailLarge nicht im JSON enthalten")			
+		Log("thumbnailLarge nicht im JSON enthalten")
+	try:
+		valid=content['valid']
+		if valid == "true" or valid == "True" or valid == True:
+			valid=True
+			Log("Valid=True")
+		else:
+			valid=False
+			Log("Valid=False")			
+	except:
+		valid=False
+		Log("Exception => Valid=False")	
 	try:
 		timestamp=content['timestamp'][:-6]
 	except:
@@ -525,7 +562,7 @@ def Search(sender, query):
 		provider="Unknown"
 		Log("Provider nicht im JSON enthalten")
 	try:
-		downloadParam=content['downloadParam']
+		downloadParam=str(content['downloadParam'])
 	except:
 		downloadParam=""
 		Log("downloadParam nicht im JSON enthalten!")
@@ -546,6 +583,10 @@ def Search(sender, query):
 	#Log("Quicktime Stream" + str())
 	#Log(Prefs['zdfformat'])
 	#Prefs["quicktime"] == 1 and 
+
+	if downloadParam.find(".mp3")>-1 or downloadParam.find(".MP3")>-1:
+			valid=False
+			Log("MP3 => invalid")
 	if Prefs['zdfformat']=="Quicktime" and ("quicktime" in content) and (content['quicktime'] !="") or (("quicktime" in content) and (content['quicktime'].find("www.hr.gl-systemhaus.de/mp4") !=-1))  :
 		url=content['quicktime']
 		quicktime=True
@@ -616,7 +657,9 @@ def Search(sender, query):
 	Log("Dauer '"+durationstring+"'")
 	
 	if test!="No Error":
-		return dir
+		Log("Error")
+	elif valid != True:
+		Log("Error: Invalid")
 	elif quicktime:
 		dir.Append(VideoItem(url,title=title, subtitle=datum+" - Dauer: "+durationstring, summary=provider+" - "+summary, duration=duration, thumb=thumbnail))
 		#dir.Append(Function(VideoItem(url,title=title)))
@@ -642,7 +685,7 @@ def Search(sender, query):
 ####################################################################################################
 def PopulateInitialFavList():
 	if not Data.Exists(FAV_LIST):
-    		favList = ["Anne Will", "Hart aber Fair"] 
+    		favList = [] 
     		Data.SaveObject(FAV_LIST, favList)
 
 ####################################################################################################
